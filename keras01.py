@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# Uncomment this to force CPU computation
+#import os
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import json
 import sys
 import numpy as np
@@ -14,12 +20,9 @@ RANDOM_SEED = 7
 np.random.seed(RANDOM_SEED)
 
 def nn_model(n_colors, n_color_components, n_categories):
-    N = 8 * n_categories
+    N = 4 * n_categories
     model = Sequential([
         Dense(N, activation='relu', input_shape=(n_colors, n_color_components)),
-        Dense(N, activation='relu'),
-        Dense(N, activation='relu'),
-        Dense(N, activation='relu'),
         Flatten(),
         Dense(n_categories, kernel_initializer='normal', activation='softmax')
     ])
@@ -43,7 +46,7 @@ def prep_values(R, max_length):
 
 def sorted_order(y):
     y_idx = list(enumerate(y))
-    y_idx.sort(key=lambda e: e[1])
+    y_idx.sort(key=lambda e: e[1], reverse=True)
     y_ord, y_val = list(zip(*y_idx))
     return list(y_ord)
 
@@ -65,8 +68,8 @@ model = nn_model(COLOR_DATA_MAX_LENGTH, 4, len(categories))
 s_train = None
 X_test = None
 
-for i in range(3):
-    R_train, R_test, s_train, s_test = train_test_split(R, s, test_size=0.1, random_state=RANDOM_SEED)
+for i in range(10):
+    R_train, R_test, s_train, s_test = train_test_split(R, s, test_size=0.2, random_state=RANDOM_SEED)
 
     X_train = prep_values(R_train, COLOR_DATA_MAX_LENGTH)
     X_test = prep_values(R_test, COLOR_DATA_MAX_LENGTH)
@@ -74,12 +77,15 @@ for i in range(3):
     y_train = prep_keys(vectorizer, s_train)
     y_test = prep_keys(vectorizer, s_test)
 
-    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=20, batch_size=50, verbose=2)
+    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=100, batch_size=20, verbose=2)
 
 for (name, x) in zip(s_test, X_test):
     x = np.asarray([x])
     y = model.predict(x)[0]
     y_top = sorted_order(y)[:3]
-    top_labels = map(lambda i: categories[i], y_top)
+    top_labels = list(map(lambda i: categories[i], y_top))
     predicted_name = ' '.join(top_labels)
     print(name, "predicted as", predicted_name)
+
+# if len(sys.argv) >= 3:
+#     model.save(sys.argv[2])
