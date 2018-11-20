@@ -25,10 +25,10 @@ def prep_values(R, max_length):
     X = np.asarray(X)
     return X
 
-with open(f'{sys.argv[1]}-categories.json', 'r') as f:
+with open(sys.argv[1], 'r') as f:
     categories = json.load(f)
 
-model = load_model(f'{sys.argv[1]}.h5')
+model = load_model(sys.argv[2])
 
 request = json.load(sys.stdin)
 
