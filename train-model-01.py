@@ -18,17 +18,15 @@ np.random.seed(RANDOM_SEED)
 
 def nn_model(n_colors, n_color_components, n_categories):
     n = n_colors * n_color_components
-    A = 12 * n_categories
+    A = 8 * n_categories
     model = Sequential([
         Flatten(),
         Dense(A, activation='relu'),
-        Dropout(0.025),
+        Dropout(0.1),
         Dense(A, activation='relu'),
-        Dropout(0.050),
+        Dropout(0.5),
         Dense(A, activation='relu'),
-        Dropout(0.100),
-        Dense(A, activation='relu'),
-        Dropout(0.200),
+        Dropout(1.0),
         Dense(n_categories, activation='softmax')
     ])
 
@@ -55,7 +53,11 @@ def sorted_order(y):
     y_ord, y_val = list(zip(*y_idx))
     return list(y_ord)
 
+
 data_file_path = sys.argv[1]
+output_files_prefix = sys.argv[2]
+
+
 with open(data_file_path, 'r', encoding='utf-8') as data_file:
     data = json.load(data_file)
 
@@ -73,8 +75,8 @@ model = nn_model(PALETTE_NUM_COLORS, COLOR_NUM_COMPONENTS, len(categories))
 s_train = None
 X_test = None
 
-for i in range(5):
-    R_train, R_test, s_train, s_test = train_test_split(R, s, test_size=0.2, random_state=RANDOM_SEED)
+for i in range(40):
+    R_train, R_test, s_train, s_test = train_test_split(R, s, test_size=0.3, random_state=RANDOM_SEED)
 
     X_train = prep_values(R_train, PALETTE_NUM_COLORS)
     X_test = prep_values(R_test, PALETTE_NUM_COLORS)
@@ -82,9 +84,9 @@ for i in range(5):
     y_train = prep_keys(vectorizer, s_train)
     y_test = prep_keys(vectorizer, s_test)
 
-    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=100, batch_size=50, verbose=2)
+    model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=40, batch_size=200, verbose=2)
 
 if len(sys.argv) >= 3:
-    model.save(f'{sys.argv[2]}.h5')
-    with open(f'{sys.argv[2]}-categories.json', 'w') as f:
+    model.save(f'{output_files_prefix}.h5')
+    with open(f'{output_files_prefix}-categories.json', 'w') as f:
         json.dump(categories, f)
