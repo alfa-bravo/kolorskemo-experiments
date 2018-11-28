@@ -2,18 +2,18 @@
 
 # Uncomment this to force CPU computation
 import os
-from functools import reduce
-from operator import xor
-
-from scipy.spatial import KDTree
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
+from functools import reduce
+from operator import xor
+from scipy.spatial import KDTree
+from keras.models import load_model
 import json
 import sys
 import numpy as np
-from keras.models import load_model
+
 
 PALETTE_NUM_COLORS = 5
 COLOR_NUM_COMPONENTS = 4
@@ -89,17 +89,27 @@ n_colors = len(colors)
 input_shape = (PALETTE_NUM_COLORS, len(categories))
 
 # Process X
-_, X = encoder.transform(colors)
+min_neighbors, X = encoder.transform(colors)
 X = zero_padded_array(X, input_shape)
 X = np.array([X])
 
 y = model.predict(X)
 y0 = y[0]
+y0_n = y0 / max(y0)
 
-top_indices = sorted_order(y0)[:n_colors]
-top_categories = list(map(lambda i: categories[i], top_indices))
+top_indices = sorted_order(y0)
+#top_categories = list(map(lambda i: categories[i], top_indices))
+
+top_categories = {categories[i] for i in top_indices if y0_n[i] > 0.1}
 predicted_name = ' '.join(top_categories)
 
 output = {'predicted-name': predicted_name}
+
+if 'DEBUG' in os.environ:
+    import matplotlib.pyplot as plt
+    plt.bar(x=categories, height=y0_n)
+    plt.xticks(rotation=90)
+    plt.show()
+    print(min_neighbors)
 
 print(json.dumps(output))
