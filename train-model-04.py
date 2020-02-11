@@ -153,7 +153,7 @@ model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=50, batch_s
 
 def sorted_order(y):
     y_idx = list(enumerate(y))
-    y_idx.sort(key=lambda e: e[1])
+    y_idx.sort(key=lambda e: e[1], reverse=True)
     y_ord, y_val = list(zip(*y_idx))
     return list(y_ord)
 
